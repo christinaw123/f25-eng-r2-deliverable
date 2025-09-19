@@ -18,15 +18,14 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
 import { createBrowserSupabaseClient } from "@/lib/client-utils";
+import type { Database } from "@/lib/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, type BaseSyntheticEvent } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-// We use zod (z) to define a schema for the "Add species" form.
-// zod handles validation of the input values with methods like .string(), .nullable(). It also processes the form inputs with .transform() before the inputs are sent to the database.
+type Species = Database["public"]["Tables"]["species"]["Row"];
 
 // Define kingdom enum for use in Zod schema and displaying dropdown options in the form
 const kingdoms = z.enum(["Animalia", "Plantae", "Fungi", "Protista", "Archaea", "Bacteria"]);
@@ -61,42 +60,22 @@ const speciesSchema = z.object({
 
 type FormData = z.infer<typeof speciesSchema>;
 
-// Default values for the form fields.
-/* Because the react-hook-form (RHF) used here is a controlled form (not an uncontrolled form),
-fields that are nullable/not required should explicitly be set to `null` by default.
-Otherwise, they will be `undefined` by default, which will raise warnings because `undefined` conflicts with controlled components.
-All form fields should be set to non-undefined default values.
-Read more here: https://legacy.react-hook-form.com/api/useform/
-*/
-const defaultValues: Partial<FormData> = {
-  scientific_name: "",
-  common_name: null,
-  kingdom: "Animalia",
-  total_population: null,
-  image: null,
-  description: null,
-  endangered: false,
-};
-
-// Wikipedia API types
-interface WikipediaSearchResult {
-  title: string;
-  extract: string;
-  thumbnail?: {
-    source: string;
-  };
-  pageimage?: string;
-}
-
-export default function AddSpeciesDialog({ userId }: { userId: string }) {
+export default function EditSpeciesDialog({ species }: { species: Species }) {
   const router = useRouter();
 
   // Control open/closed state of the dialog
   const [open, setOpen] = useState<boolean>(false);
 
-  // Wikipedia search state
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [isSearching, setIsSearching] = useState<boolean>(false);
+  // Set default values for the form (on open) to the existing species data
+  const defaultValues: Partial<FormData> = {
+    scientific_name: species.scientific_name,
+    common_name: species.common_name,
+    kingdom: species.kingdom,
+    total_population: species.total_population,
+    image: species.image,
+    description: species.description,
+    endangered: species.endangered || false,
+  };
 
   // Instantiate form functionality with React Hook Form, passing in the Zod schema (for validation) and default values
   const form = useForm<FormData>({
@@ -105,69 +84,12 @@ export default function AddSpeciesDialog({ userId }: { userId: string }) {
     mode: "onChange",
   });
 
-  // Wikipedia search function
-  const searchWikipedia = async () => {
-    if (!searchQuery.trim()) {
-      toast({
-        title: "Search query required",
-        description: "Please enter a species name to search.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSearching(true);
-    try {
-      // Wikipedia API endpoint for search and page content
-      const searchUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(searchQuery.trim())}`;
-
-      const response = await fetch(searchUrl);
-
-      if (!response.ok) {
-        throw new Error("Article not found");
-      }
-
-      const data = (await response.json()) as WikipediaSearchResult;
-
-      // Check if we got valid content
-      if (data.extract && data.extract.trim()) {
-        // Autofill description
-        form.setValue("description", data.extract);
-
-        // Autofill image if available
-        if (data.thumbnail?.source) {
-          form.setValue("image", data.thumbnail.source);
-        } else if (data.pageimage) {
-          // Try to construct image URL from pageimage
-          const imageUrl = `https://en.wikipedia.org/wiki/Special:FilePath/${encodeURIComponent(data.pageimage)}`;
-          form.setValue("image", imageUrl);
-        }
-
-        toast({
-          title: "Information found!",
-          description: `Successfully retrieved information for "${data.title}".`,
-        });
-      } else {
-        throw new Error("No content found");
-      }
-    } catch (error) {
-      console.error("Wikipedia search error:", error);
-      toast({
-        title: "No information found",
-        description: `No Wikipedia article found for "${searchQuery}". You can still fill in the information manually.`,
-        variant: "destructive",
-      });
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
   const onSubmit = async (input: FormData) => {
     // The `input` prop contains data that has already been processed by zod. We can now use it in a supabase query
     const supabase = createBrowserSupabaseClient();
-    const { error } = await supabase.from("species").insert([
-      {
-        author: userId,
+    const { error } = await supabase
+      .from("species")
+      .update({
         common_name: input.common_name,
         description: input.description,
         kingdom: input.kingdom,
@@ -175,8 +97,8 @@ export default function AddSpeciesDialog({ userId }: { userId: string }) {
         total_population: input.total_population,
         image: input.image,
         endangered: input.endangered,
-      },
-    ]);
+      })
+      .eq("id", species.id);
 
     // Catch and report errors from Supabase and exit the onSubmit function with an early 'return' if an error occurred.
     if (error) {
@@ -189,70 +111,34 @@ export default function AddSpeciesDialog({ userId }: { userId: string }) {
 
     // Because Supabase errors were caught above, the remainder of the function will only execute upon a successful edit
 
-    // Reset form values to the default (empty) values.
-    // Practically, this line can be removed because router.refresh() also resets the form. However, we left it as a reminder that you should generally consider form "cleanup" after an add/edit operation.
-    form.reset(defaultValues);
-
-    setSearchQuery("");
-
     setOpen(false);
 
-    // Refresh all server components in the current route. This helps display the newly created species because species are fetched in a server component, species/page.tsx.
-    // Refreshing that server component will display the new species from Supabase
+    // Refresh all server components in the current route. This helps display the updated species because species are fetched in a server component, species/page.tsx.
+    // Refreshing that server component will display the updated species from Supabase
     router.refresh();
 
     return toast({
-      title: "New species added!",
-      description: "Successfully added " + input.scientific_name + ".",
+      title: "Species updated!",
+      description: "Successfully updated " + input.scientific_name + ".",
     });
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="secondary">
-          <Icons.add className="mr-3 h-5 w-5" />
-          Add Species
+        <Button variant="outline" size="sm">
+          <Icons.edit className="mr-2 h-4 w-4" />
+          Edit
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-screen overflow-y-auto sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Add Species</DialogTitle>
-          <DialogDescription>Search Wikipedia to autofill information, then complete the form below.</DialogDescription>
+          <DialogTitle>Edit Species</DialogTitle>
+          <DialogDescription>
+            Update the information for {species.scientific_name}. Click &quot;Update Species&quot; below when
+            you&apos;re done.
+          </DialogDescription>
         </DialogHeader>
-
-        {/* Wikipedia Search Section */}
-        <div className="mb-6 space-y-4 border-b pb-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Search Wikipedia (Optional)</label>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Enter species name (e.g., 'Panthera leo' or 'African lion')"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    searchWikipedia();
-                  }
-                }}
-                disabled={isSearching}
-              />
-              <Button
-                type="button"
-                onClick={searchWikipedia}
-                disabled={isSearching || !searchQuery.trim()}
-                className="px-3"
-              >
-                {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              This will automatically fill in the description and image fields if found.
-            </p>
-          </div>
-        </div>
-
         <Form {...form}>
           <form onSubmit={(e: BaseSyntheticEvent) => void form.handleSubmit(onSubmit)(e)}>
             <div className="grid w-full items-center gap-4">
@@ -393,7 +279,7 @@ export default function AddSpeciesDialog({ userId }: { userId: string }) {
               />
               <div className="flex">
                 <Button type="submit" className="ml-1 mr-1 flex-auto">
-                  Add Species
+                  Update Species
                 </Button>
                 <DialogClose asChild>
                   <Button type="button" className="ml-1 mr-1 flex-auto" variant="secondary">

@@ -1,5 +1,6 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,11 +12,18 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import type { Database } from "@/lib/schema";
+import { Calendar, User } from "lucide-react";
 import Image from "next/image";
 
-type Species = Database["public"]["Tables"]["species"]["Row"];
+// Type for species with author information
+type SpeciesWithAuthor = Database["public"]["Tables"]["species"]["Row"] & {
+  profiles?: {
+    display_name: string;
+    email: string;
+  };
+};
 
-export default function SpeciesDetailDialog({ species }: { species: Species }) {
+export default function SpeciesDetailDialog({ species }: { species: SpeciesWithAuthor }) {
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -23,11 +31,17 @@ export default function SpeciesDetailDialog({ species }: { species: Species }) {
       </DialogTrigger>
       <DialogContent className="max-h-screen overflow-y-auto sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>{species.scientific_name}</DialogTitle>
+          <DialogTitle className="text-2xl">{species.scientific_name}</DialogTitle>
           <DialogDescription>Detailed information about this species</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
+          {/* Status Badges */}
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary">{species.kingdom}</Badge>
+            {species.endangered && <Badge variant="destructive">Endangered</Badge>}
+          </div>
+
           {/* Image */}
           {species.image && (
             <div className="relative h-64 w-full overflow-hidden rounded-lg">
@@ -67,6 +81,34 @@ export default function SpeciesDetailDialog({ species }: { species: Species }) {
                 <p className="leading-relaxed text-gray-700">{species.description}</p>
               </div>
             )}
+          </div>
+
+          {/* Author Information */}
+          <div className="border-t pt-4">
+            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Contribution Information
+            </h3>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">
+                  Added by <span className="font-medium">{species.profiles?.display_name || "Unknown Author"}</span>
+                </span>
+              </div>
+              {(species as any).created_at && (
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">
+                    Added on{" "}
+                    {new Date((species as any).created_at).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Close Button */}

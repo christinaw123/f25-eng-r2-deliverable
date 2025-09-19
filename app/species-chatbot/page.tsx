@@ -4,10 +4,21 @@ import { TypographyH2, TypographyP } from "@/components/ui/typography";
 import { useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 
+// Define types for API responses
+type ChatResponse = {
+  response: string;
+};
+
+type ErrorResponse = {
+  error?: string;
+};
+
 export default function SpeciesChatbot() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [message, setMessage] = useState("");
   const [chatLog, setChatLog] = useState<{ role: "user" | "bot"; content: string }[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
   const handleInput = () => {
     const textarea = textareaRef.current;
     if (textarea) {
@@ -16,11 +27,73 @@ export default function SpeciesChatbot() {
     }
   };
 
-const handleSubmit = async () => {
-  // TODO: Implement this function
-}
+  const handleSubmit = async () => {
+    // TODO: Implement this function
+    // Trim input and ignore empty messages
+    const trimmedMessage = message.trim();
+    if (!trimmedMessage || isLoading) return;
 
-return (
+    // Add user message to chat
+    const userMessage = {
+      role: "user" as const,
+      content: trimmedMessage,
+    };
+    setChatLog((prev) => [...prev, userMessage]);
+
+    // Clear input and set loading state
+    setMessage("");
+    setIsLoading(true);
+
+    // Reset textarea height
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message: trimmedMessage }),
+      });
+
+      if (!response.ok) {
+        const errorData = (await response.json()) as ErrorResponse;
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      const data = (await response.json()) as ChatResponse;
+
+      // Add bot response to chat
+      const botMessage = {
+        role: "bot" as const,
+        content: data.response,
+      };
+      setChatLog((prev) => [...prev, botMessage]);
+    } catch (error) {
+      console.error("Error sending message:", error);
+
+      // Add error message to chat
+      const errorMessage = {
+        role: "bot" as const,
+        content: "I apologize, but I'm having trouble responding right now. Please try again in a moment.",
+      };
+      setChatLog((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle Enter key press
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
+  return (
     <>
       <TypographyH2>Species Chatbot</TypographyH2>
       <div className="mt-4 flex gap-4">
