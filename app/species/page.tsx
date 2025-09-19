@@ -6,9 +6,15 @@ import { redirect } from "next/navigation";
 import AddSpeciesDialog from "./add-species-dialog";
 import SpeciesCard from "./species-card";
 type SpeciesRow = Database["public"]["Tables"]["species"]["Row"];
-type Author = { display_name: string };
-type RawSpecies = SpeciesRow & { profiles?: Author | Author[] };
-type SpeciesWithAuthor = SpeciesRow & { profiles?: Author };
+interface Author {
+  display_name: string;
+}
+interface RawSpecies extends SpeciesRow {
+  profiles?: Author | Author[];
+}
+interface SpeciesWithAuthor extends SpeciesRow {
+  profiles?: Author;
+}
 
 export default async function SpeciesList() {
   // Create supabase server component client and obtain user session from stored cookie

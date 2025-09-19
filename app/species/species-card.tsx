@@ -32,10 +32,8 @@ import { useState } from "react";
 import EditSpeciesDialog from "./edit-species-dialog";
 
 // type for species with author information
-type SpeciesWithAuthor = Database["public"]["Tables"]["species"]["Row"] & {
-  profiles?: {
-    display_name: string;
-  };
+export type SpeciesWithAuthor = Database["public"]["Tables"]["species"]["Row"] & {
+  profiles?: { display_name: string };
 };
 
 export default function SpeciesCard({ species, sessionId }: { species: SpeciesWithAuthor; sessionId: string }) {
@@ -106,14 +104,14 @@ export default function SpeciesCard({ species, sessionId }: { species: SpeciesWi
               <DialogHeader>
                 <DialogTitle>Delete Species</DialogTitle>
                 <DialogDescription>
-                  Are you sure you want to delete "{species.scientific_name}"? This action cannot be undone.
+                  Are you sure you want to delete &quot;{species.scientific_name}&quot;? This action cannot be undone.
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setShowDeleteDialog(false)} disabled={isDeleting}>
                   Cancel
                 </Button>
-                <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+                <Button variant="destructive" onClick={() => handleDelete} disabled={isDeleting}>
                   {isDeleting ? "Deleting..." : "Delete"}
                 </Button>
               </DialogFooter>
@@ -136,7 +134,7 @@ export default function SpeciesCard({ species, sessionId }: { species: SpeciesWi
       <div className="mt-3 flex items-center gap-2 border-t pt-3 text-sm text-muted-foreground">
         <User className="h-4 w-4" />
         <span>
-          Added by {species.profiles?.display_name || "Unknown Author"}
+          Added by {species.profiles?.display_name ?? "Unknown Author"}
           {isAuthor && " (You)"}
         </span>
       </div>
