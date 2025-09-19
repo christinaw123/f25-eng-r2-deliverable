@@ -38,18 +38,11 @@ export default async function SpeciesList() {
     .order("id", { ascending: false })
     .returns<RawSpecies[]>();
 
-  type SpeciesWithAuthor = Database["public"]["Tables"]["species"]["Row"] & {
-    profiles?: { display_name: string };
-  };
-
   // Normalize profiles to a single object (no `any`, no unsafe member access)
-  const normalized: SpeciesWithAuthor[] = (species ?? []).map((s) => {
-    const p = (s as any).profiles;
-    return {
-      ...s,
-      profiles: Array.isArray(p) ? p[0] : p, // force a single object
-    } as SpeciesWithAuthor;
-  });
+  const normalized: SpeciesWithAuthor[] = (species ?? []).map((s) => ({
+    ...s,
+    profiles: Array.isArray(s.profiles) ? s.profiles[0] : s.profiles,
+  }));
 
   return (
     <>
