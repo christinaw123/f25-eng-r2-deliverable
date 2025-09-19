@@ -20,6 +20,7 @@ type SpeciesWithAuthor = Database["public"]["Tables"]["species"]["Row"] & {
   profiles?: {
     display_name: string;
   };
+  created_at?: string;
 };
 
 export default function SpeciesDetailDialog({ species }: { species: SpeciesWithAuthor }) {
@@ -91,10 +92,11 @@ export default function SpeciesDetailDialog({ species }: { species: SpeciesWithA
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm">
-                  Added by <span className="font-medium">{species.profiles?.display_name || "Unknown Author"}</span>
+                  Added by <span className="font-medium">{species.profiles?.display_name ?? "Unknown Author"}</span>
                 </span>
               </div>
-              {(species as any).created_at && (
+
+              {species.created_at && (
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">
