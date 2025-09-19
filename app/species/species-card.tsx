@@ -36,7 +36,6 @@ import SpeciesDetailDialog from "./species-detail-dialog";
 type SpeciesWithAuthor = Database["public"]["Tables"]["species"]["Row"] & {
   profiles?: {
     display_name: string;
-    email: string;
   };
 };
 

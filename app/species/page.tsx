@@ -26,8 +26,7 @@ export default async function SpeciesList() {
       `
     *,
     profiles:author (
-      display_name,
-      email
+      display_name
     )
   `,
     )

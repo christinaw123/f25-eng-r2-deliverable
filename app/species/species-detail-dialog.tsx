@@ -19,7 +19,6 @@ import Image from "next/image";
 type SpeciesWithAuthor = Database["public"]["Tables"]["species"]["Row"] & {
   profiles?: {
     display_name: string;
-    email: string;
   };
 };
 
