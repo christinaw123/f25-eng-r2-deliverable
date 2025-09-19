@@ -1,5 +1,6 @@
 import { Separator } from "@/components/ui/separator";
 import { TypographyH2 } from "@/components/ui/typography";
+import type { Database } from "@/lib/schema";
 import { createServerSupabaseClient } from "@/lib/server-utils";
 import { redirect } from "next/navigation";
 import AddSpeciesDialog from "./add-species-dialog";
@@ -32,6 +33,18 @@ export default async function SpeciesList() {
     )
     .order("id", { ascending: false });
 
+  type SpeciesWithAuthor = Database["public"]["Tables"]["species"]["Row"] & {
+    profiles?: { display_name: string };
+  };
+
+  const normalized: SpeciesWithAuthor[] = (species ?? []).map((s) => {
+    const p = (s as any).profiles;
+    return {
+      ...s,
+      profiles: Array.isArray(p) ? p[0] : p, // force a single object
+    } as SpeciesWithAuthor;
+  });
+
   return (
     <>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
@@ -40,7 +53,7 @@ export default async function SpeciesList() {
       </div>
       <Separator className="my-4" />
       <div className="flex flex-wrap justify-center">
-        {species?.map((speciesItem) => (
+        {normalized?.map((speciesItem) => (
           <SpeciesCard key={speciesItem.id} species={speciesItem} sessionId={sessionId} />
         ))}
       </div>
