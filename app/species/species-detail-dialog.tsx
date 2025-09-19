@@ -101,7 +101,7 @@ export default function SpeciesDetailDialog({ species }: { species: SpeciesWithA
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">
                     Added on{" "}
-                    {new Date((species as any).created_at).toLocaleDateString("en-US", {
+                    {new Date(species.created_at).toLocaleDateString("en-US", {
                       year: "numeric",
                       month: "long",
                       day: "numeric",
