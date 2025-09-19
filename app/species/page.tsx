@@ -5,6 +5,10 @@ import { createServerSupabaseClient } from "@/lib/server-utils";
 import { redirect } from "next/navigation";
 import AddSpeciesDialog from "./add-species-dialog";
 import SpeciesCard from "./species-card";
+type SpeciesRow = Database["public"]["Tables"]["species"]["Row"];
+type Author = { display_name: string };
+type RawSpecies = SpeciesRow & { profiles?: Author | Author[] };
+type SpeciesWithAuthor = SpeciesRow & { profiles?: Author };
 
 export default async function SpeciesList() {
   // Create supabase server component client and obtain user session from stored cookie
@@ -31,12 +35,14 @@ export default async function SpeciesList() {
     )
   `,
     )
-    .order("id", { ascending: false });
+    .order("id", { ascending: false })
+    .returns<RawSpecies[]>();
 
   type SpeciesWithAuthor = Database["public"]["Tables"]["species"]["Row"] & {
     profiles?: { display_name: string };
   };
 
+  // Normalize profiles to a single object (no `any`, no unsafe member access)
   const normalized: SpeciesWithAuthor[] = (species ?? []).map((s) => {
     const p = (s as any).profiles;
     return {

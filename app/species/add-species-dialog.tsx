@@ -130,7 +130,7 @@ export default function AddSpeciesDialog({ userId }: { userId: string }) {
       const data = (await response.json()) as WikipediaSearchResult;
 
       // Check if we got valid content
-      if (data.extract && data.extract.trim()) {
+      if (data.extract?.trim()) {
         // Autofill description
         form.setValue("description", data.extract);
 
@@ -233,14 +233,14 @@ export default function AddSpeciesDialog({ userId }: { userId: string }) {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    searchWikipedia();
+                    void searchWikipedia();
                   }
                 }}
                 disabled={isSearching}
               />
               <Button
                 type="button"
-                onClick={searchWikipedia}
+                onClick={() => void searchWikipedia()}
                 disabled={isSearching || !searchQuery.trim()}
                 className="px-3"
               >
