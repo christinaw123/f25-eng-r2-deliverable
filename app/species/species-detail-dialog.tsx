@@ -12,7 +12,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import type { Database } from "@/lib/schema";
-import { Calendar, User } from "lucide-react";
+import { User } from "lucide-react";
 import Image from "next/image";
 
 // Type for species with author information
@@ -95,20 +95,6 @@ export default function SpeciesDetailDialog({ species }: { species: SpeciesWithA
                   Added by <span className="font-medium">{species.profiles?.display_name ?? "Unknown Author"}</span>
                 </span>
               </div>
-
-              {species.created_at && (
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">
-                    Added on{" "}
-                    {new Date(species.created_at).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </span>
-                </div>
-              )}
             </div>
           </div>
 

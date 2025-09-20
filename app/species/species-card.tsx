@@ -143,7 +143,7 @@ export default function SpeciesCard({ species, sessionId }: { species: SpeciesWi
       {/* Action buttons */}
       <div className="mt-3 space-y-2">
         <SpeciesDetailDialog species={species} />
-        {isAuthor && <EditSpeciesDialog species={species} />}
+        {isAuthor && <EditSpeciesDialog species={species} currentUserId={sessionId} />}
       </div>
     </div>
   );

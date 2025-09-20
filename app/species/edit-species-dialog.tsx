@@ -60,11 +60,19 @@ const speciesSchema = z.object({
 
 type FormData = z.infer<typeof speciesSchema>;
 
-export default function EditSpeciesDialog({ species }: { species: Species }) {
+export default function EditSpeciesDialog({ species, currentUserId }: { species: Species; currentUserId: string }) {
   const router = useRouter();
 
   // Control open/closed state of the dialog
   const [open, setOpen] = useState<boolean>(false);
+
+  // Authorization check
+  const isAuthor = species.author === currentUserId;
+
+  // Don't render anything if user is not the author
+  if (!isAuthor) {
+    return null;
+  }
 
   // Set default values for the form (on open) to the existing species data
   const defaultValues: Partial<FormData> = {
