@@ -112,7 +112,7 @@ export default function SpeciesCard({ species, sessionId }: { species: SpeciesWi
                 <Button variant="outline" onClick={() => setShowDeleteDialog(false)} disabled={isDeleting}>
                   Cancel
                 </Button>
-                <Button variant="destructive" onClick={() => handleDelete} disabled={isDeleting}>
+                <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
                   {isDeleting ? "Deleting..." : "Delete"}
                 </Button>
               </DialogFooter>
@@ -122,7 +122,7 @@ export default function SpeciesCard({ species, sessionId }: { species: SpeciesWi
       </div>
 
       {/* Endangered badge */}
-      {species.endangered && (
+      {Boolean(species.endangered) && (
         <Badge variant="destructive" className="mt-2 w-fit">
           Endangered
         </Badge>
