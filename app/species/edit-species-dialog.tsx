@@ -66,14 +66,6 @@ export default function EditSpeciesDialog({ species, currentUserId }: { species:
   // Control open/closed state of the dialog
   const [open, setOpen] = useState<boolean>(false);
 
-  // Authorization check
-  const isAuthor = species.author === currentUserId;
-
-  // Don't render anything if user is not the author
-  if (!isAuthor) {
-    return null;
-  }
-
   // Set default values for the form (on open) to the existing species data
   const defaultValues: Partial<FormData> = {
     scientific_name: species.scientific_name,
@@ -91,6 +83,14 @@ export default function EditSpeciesDialog({ species, currentUserId }: { species:
     defaultValues,
     mode: "onChange",
   });
+
+  // Authorization check
+  const isAuthor = species.author === currentUserId;
+
+  // Don't render anything if user is not the author
+  if (!isAuthor) {
+    return null;
+  }
 
   const onSubmit = async (input: FormData) => {
     // The `input` prop contains data that has already been processed by zod. We can now use it in a supabase query
