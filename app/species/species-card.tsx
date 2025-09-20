@@ -30,6 +30,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import EditSpeciesDialog from "./edit-species-dialog";
+import SpeciesDetailDialog from "./species-detail-dialog";
 
 // type for species with author information
 export type SpeciesWithAuthor = Database["public"]["Tables"]["species"]["Row"] & {
@@ -141,7 +142,7 @@ export default function SpeciesCard({ species, sessionId }: { species: SpeciesWi
 
       {/* Action buttons */}
       <div className="mt-3 space-y-2">
-        {/* <SpeciesDetailDialog species={species} /> */}
+        <SpeciesDetailDialog species={species} />
         {isAuthor && <EditSpeciesDialog species={species} />}
       </div>
     </div>
